@@ -1,0 +1,298 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"sync"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Ticket struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Category    string `json:"category"`
+	Priority    string `json:"priority"`
+	Status      string `json:"status"`
+	UserID      int    `json:"user_id"`
+}
+
+var (
+	tickets = []Ticket{}
+	nextID  = 1
+	mu      sync.Mutex
+)
+
+// ---------------------------------------------------------
+// Check if user exists in User Service
+// ---------------------------------------------------------
+
+func userExists(userID int) bool {
+
+	url := "http://localhost:8001/api/users/" + strconv.Itoa(userID)
+
+	resp, err := http.Get(url)
+
+	if err != nil {
+		return false
+	}
+
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK
+}
+
+// ---------------------------------------------------------
+// Create notification in Notification Service
+// ---------------------------------------------------------
+
+func createNotification(userID int, ticketID int) {
+
+	url := "http://localhost:8003/api/notifications"
+
+	payload := map[string]interface{}{
+		"user_id":   userID,
+		"message":   "Your ticket has been created successfully.",
+		"ticket_id": ticketID,
+		"read":      false,
+	}
+
+	data, err := json.Marshal(payload)
+
+	if err != nil {
+		return
+	}
+
+	resp, err := http.Post(
+		url,
+		"application/json",
+		bytes.NewBuffer(data),
+	)
+
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+}
+
+// ---------------------------------------------------------
+// Main
+// ---------------------------------------------------------
+
+func main() {
+
+	r := gin.Default()
+
+	r.GET("/health", health)
+
+	r.POST("/api/tickets", createTicket)
+	r.GET("/api/tickets", getTickets)
+	r.GET("/api/tickets/:id", getTicket)
+	r.PUT("/api/tickets/:id", updateTicket)
+	r.DELETE("/api/tickets/:id", deleteTicket)
+
+	r.Run(":8002")
+}
+
+// ---------------------------------------------------------
+// Health
+// ---------------------------------------------------------
+
+func health(c *gin.Context) {
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "healthy",
+		"service": "ticket-service",
+	})
+}
+
+// ---------------------------------------------------------
+// Create Ticket
+// ---------------------------------------------------------
+
+func createTicket(c *gin.Context) {
+
+	var ticket Ticket
+
+	// Read JSON request
+	if err := c.ShouldBindJSON(&ticket); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+
+		return
+	}
+
+	// Check User Service
+	if !userExists(ticket.UserID) {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "User not found",
+		})
+
+		return
+	}
+
+	// Lock ticket data
+	mu.Lock()
+
+	ticket.ID = nextID
+	nextID++
+
+	if ticket.Status == "" {
+		ticket.Status = "Open"
+	}
+
+	tickets = append(tickets, ticket)
+
+	mu.Unlock()
+
+	// Send notification after ticket creation
+	createNotification(ticket.UserID, ticket.ID)
+
+	c.JSON(http.StatusOK, ticket)
+}
+
+// ---------------------------------------------------------
+// Get All Tickets
+// ---------------------------------------------------------
+
+func getTickets(c *gin.Context) {
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	c.JSON(http.StatusOK, tickets)
+}
+
+// ---------------------------------------------------------
+// Get Ticket By ID
+// ---------------------------------------------------------
+
+func getTicket(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ticket ID",
+		})
+
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	for _, ticket := range tickets {
+
+		if ticket.ID == id {
+
+			c.JSON(http.StatusOK, ticket)
+
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{
+		"error": "Ticket not found",
+	})
+}
+
+// ---------------------------------------------------------
+// Update Ticket
+// ---------------------------------------------------------
+
+func updateTicket(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ticket ID",
+		})
+
+		return
+	}
+
+	var updated Ticket
+
+	if err := c.ShouldBindJSON(&updated); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	for i, ticket := range tickets {
+
+		if ticket.ID == id {
+
+			updated.ID = id
+
+			tickets[i] = updated
+
+			c.JSON(http.StatusOK, updated)
+
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{
+		"error": "Ticket not found",
+	})
+}
+
+// ---------------------------------------------------------
+// Delete Ticket
+// ---------------------------------------------------------
+
+func deleteTicket(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ticket ID",
+		})
+
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	for i, ticket := range tickets {
+
+		if ticket.ID == id {
+
+			tickets = append(
+				tickets[:i],
+				tickets[i+1:]...,
+			)
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Ticket deleted",
+			})
+
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{
+		"error": "Ticket not found",
+	})
+}

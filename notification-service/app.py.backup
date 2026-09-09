@@ -1,0 +1,129 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+
+app = FastAPI(
+    title="IT Helpdesk Notification Service",
+    version="1.0.0"
+)
+
+
+class Notification(BaseModel):
+
+    user_id: int
+
+    message: str
+
+    ticket_id: int | None = None
+
+    read: bool = False
+
+
+notifications = []
+
+next_id = 1
+
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "healthy",
+        "service": "notification-service"
+    }
+
+
+@app.post("/api/notifications")
+def create_notification(
+    notification: Notification
+):
+
+    global next_id
+
+    new_notification = {
+
+        "id": next_id,
+
+        **notification.model_dump()
+
+    }
+
+    next_id += 1
+
+    notifications.append(
+        new_notification
+    )
+
+    return new_notification
+
+
+@app.get("/api/notifications")
+def get_notifications():
+
+    return notifications
+
+
+@app.get("/api/notifications/{notification_id}")
+def get_notification(
+    notification_id: int
+):
+
+    for notification in notifications:
+
+        if notification["id"] == notification_id:
+
+            return notification
+
+    return {
+        "error": "Notification not found"
+    }
+
+
+@app.put("/api/notifications/{notification_id}")
+def update_notification(
+    notification_id: int,
+    notification: Notification
+):
+
+    for index, existing in enumerate(
+        notifications
+    ):
+
+        if existing["id"] == notification_id:
+
+            notifications[index] = {
+
+                "id": notification_id,
+
+                **notification.model_dump()
+
+            }
+
+            return notifications[index]
+
+
+    return {
+        "error": "Notification not found"
+    }
+
+
+@app.delete("/api/notifications/{notification_id}")
+def delete_notification(
+    notification_id: int
+):
+
+    global notifications
+
+    notifications = [
+
+        notification
+
+        for notification in notifications
+
+        if notification["id"] != notification_id
+
+    ]
+
+    return {
+        "message": "Notification deleted"
+    }
