@@ -14,7 +14,7 @@ app = FastAPI(
 # ---------------------------------------------------------
 
 DB_CONFIG = {
-    "host": "localhost",
+    "host": "it-helpdesk-postgres",
     "database": "helpdesk_db",
     "user": "helpdesk_app",
     "password": "helpdesk123",

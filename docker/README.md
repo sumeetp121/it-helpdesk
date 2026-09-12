@@ -282,7 +282,204 @@ FastAPI
 /health
 ```
 
-Database connectivity will be configured when PostgreSQL is containerized.
+---
 
+# User Service — Docker Network
+
+## Overview
+
+The User Service is a FastAPI application that provides REST APIs for managing users.
+
+The service runs inside a Docker container and connects to the PostgreSQL container through a dedicated Docker bridge network.
+
+## Paths
+
+```text
+Application:
+ /home/sumeet/it-helpdesk/user-service/app.py
+
+Requirements:
+ /home/sumeet/it-helpdesk/user-service/requirements.txt
+
+Dockerfile:
+ /home/sumeet/it-helpdesk/docker/user-service/Dockerfile
+
+Docker Network:
+ it-helpdesk-network
 ```
+
+## Docker Image
+
+```text
+it-helpdesk-user-service:v2
+```
+
+## Container
+
+```text
+Container:
+it-helpdesk-user-service
+```
+
+The service is exposed on:
+
+```text
+Host:      8001
+Container: 8001
+```
+
+## PostgreSQL Connection
+
+The User Service connects to PostgreSQL using the Docker container name:
+
+```text
+Host:     it-helpdesk-postgres
+Port:     5432
+Database: helpdesk_db
+User:     helpdesk_app
+```
+
+Inside Docker, `localhost` refers to the User Service container itself.
+
+Therefore, the PostgreSQL container name is used as the database host:
+
+```python
+"host": "it-helpdesk-postgres"
+```
+
+## Docker Network
+
+Both containers are connected to:
+
+```text
+it-helpdesk-network
+```
+
+```text
+it-helpdesk-user-service
+          |
+          | it-helpdesk-network
+          |
+          v
+it-helpdesk-postgres:5432
+```
+
+## Running Containers
+
+Verify:
+
+```bash
+docker ps
+```
+
+Expected containers:
+
+```text
+it-helpdesk-user-service
+it-helpdesk-postgres
+```
+
+Verify the network:
+
+```bash
+docker network inspect it-helpdesk-network
+```
+
+## API Verification
+
+Health check:
+
+```bash
+curl http://localhost:8001/health
+```
+
+Expected:
+
+```json
+{
+  "status": "healthy",
+  "service": "user-service"
+}
+```
+
+Get all users:
+
+```bash
+curl http://localhost:8001/api/users
+```
+
+The API successfully retrieves users from PostgreSQL through the Docker network.
+
+## Build Image
+
+From:
+
+```text
+/home/sumeet/it-helpdesk
+```
+
+Build the image:
+
+```bash
+docker build \
+  -t it-helpdesk-user-service:v2 \
+  -f docker/user-service/Dockerfile .
+```
+
+## Run Container
+
+```bash
+docker run -d \
+  --name it-helpdesk-user-service \
+  --network it-helpdesk-network \
+  -p 8001:8001 \
+  it-helpdesk-user-service:v2
+```
+
+## Important Docker Concepts
+
+### Container-to-container communication
+
+Containers on the same Docker network can communicate using the container name.
+
+Example:
+
+```text
+it-helpdesk-postgres:5432
+```
+
+### Host port vs container port
+
+User Service:
+
+```text
+0.0.0.0:8001 -> 8001
+```
+
+PostgreSQL:
+
+```text
+5432/tcp
+```
+
+PostgreSQL does not need to publish port `5432` to the host for communication with the User Service.
+
+The communication happens internally through:
+
+```text
+it-helpdesk-network
+```
+
+## Current Milestone
+
+```text
+User Service Dockerized
+        +
+PostgreSQL Dockerized
+        +
+Docker Network
+        +
+User Service → PostgreSQL communication
+        =
+Working
 ```
