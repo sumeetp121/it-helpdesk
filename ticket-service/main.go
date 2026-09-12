@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	dbHost     = "localhost"
+	dbHost     = "it-helpdesk-postgres"
 	dbPort     = 5432
 	dbUser     = "helpdesk_app"
 	dbPassword = "helpdesk123"
@@ -45,7 +45,7 @@ func main() {
 		" user=" + dbUser +
 		" password=" + dbPassword +
 		" dbname=" + dbName +
-		" sslmode=require"
+		" sslmode=disable"
 
 	db, err = sql.Open("postgres", connectionString)
 
