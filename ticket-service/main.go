@@ -102,7 +102,7 @@ func health(c *gin.Context) {
 
 func userExists(userID int) bool {
 
-	url := "http://localhost:8001/api/users/" +
+	url := "http://it-helpdesk-user-service:8001/api/users/" +
 		strconv.Itoa(userID)
 
 	resp, err := http.Get(url)
@@ -133,7 +133,7 @@ func createNotification(userID int, ticketID int) error {
 	}
 
 	resp, err := http.Post(
-		"http://localhost:8003/api/notifications",
+		"http://it-helpdesk-notification-service:8003/api/notifications",
 		"application/json",
 		strings.NewReader(string(body)),
 	)
@@ -158,7 +158,7 @@ func createNotification(userID int, ticketID int) error {
 
 func deleteTicketNotifications(ticketID int) error {
 
-	url := "http://localhost:8003/api/notifications/ticket/" +
+	url := "http://it-helpdesk-notification-service:8003/api/notifications/ticket/" +
 		strconv.Itoa(ticketID)
 
 	req, err := http.NewRequest(
