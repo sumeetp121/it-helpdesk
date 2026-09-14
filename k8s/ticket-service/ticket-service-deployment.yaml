@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-service
+  namespace: it-helpdesk
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: ticket-service
+
+  template:
+    metadata:
+      labels:
+        app: ticket-service
+
+    spec:
+      containers:
+        - name: ticket-service
+          image: it-helpdesk-ticket-service:v5
+          imagePullPolicy: Never
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+
+          ports:
+            - containerPort: 8002
