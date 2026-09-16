@@ -1,0 +1,81 @@
+name: IT Helpdesk CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  python-services:
+    name: Validate Python Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install User Service dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r user-service/requirements.txt
+
+      - name: Install Notification Service dependencies
+        run: |
+          pip install -r notification-service/requirements.txt
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile user-service/app.py
+          python -m py_compile notification-service/app.py
+
+  ticket-service:
+    name: Build Ticket Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Download Go dependencies
+        working-directory: ticket-service
+        run: go mod download
+
+      - name: Build Ticket Service
+        working-directory: ticket-service
+        run: go build -v .
+
+  frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
