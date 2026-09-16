@@ -13,18 +13,29 @@ spec:
       labels:
         app: user-service
     spec:
-      containers:
-        - name: user-service
-          image: it-helpdesk-user-service:v2
-          imagePullPolicy: Never
+      containers:  
+      - name: user-service
+        image: it-helpdesk-user-service:v2
+        imagePullPolicy: Never
 
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "64Mi"
-            limits:
-              cpu: "250m"
-              memory: "128Mi"
+        envFrom:
+          - configMapRef:
+              name: user-service-config
 
-          ports:
-            - containerPort: 8001
+        env:
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "250m"
+            memory: "128Mi"
+
+        ports:
+          - containerPort: 8001
