@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
+import os
 
 
 app = FastAPI(
@@ -17,7 +18,7 @@ DB_CONFIG = {
     "host": "it-helpdesk-postgres",
     "database": "helpdesk_db",
     "user": "helpdesk_app",
-    "password": "helpdesk123",
+    "password": os.getenv("DB_PASSWORD"),
     "port": 5432
 }
 

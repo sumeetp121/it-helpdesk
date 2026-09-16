@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,16 +15,16 @@ import (
 )
 
 const (
-	dbHost     = "it-helpdesk-postgres"
-	dbPort     = 5432
-	dbUser     = "helpdesk_app"
-	dbPassword = "helpdesk123"
-	dbName     = "helpdesk_db"
+	dbHost = "it-helpdesk-postgres"
+	dbPort = 5432
+	dbUser = "helpdesk_app"
+	dbName = "helpdesk_db"
 )
 
 var (
-	db *sql.DB
-	mu sync.Mutex
+	db         *sql.DB
+	mu         sync.Mutex
+	dbPassword = os.Getenv("DB_PASSWORD")
 )
 
 type Ticket struct {
@@ -78,7 +79,6 @@ func main() {
 	r.Run(":8002")
 }
 
-
 func health(c *gin.Context) {
 
 	err := db.Ping()
@@ -99,7 +99,6 @@ func health(c *gin.Context) {
 	})
 }
 
-
 func userExists(userID int) bool {
 
 	url := "http://it-helpdesk-user-service:8001/api/users/" +
@@ -115,7 +114,6 @@ func userExists(userID int) bool {
 
 	return resp.StatusCode == http.StatusOK
 }
-
 
 func createNotification(userID int, ticketID int) error {
 
@@ -155,7 +153,6 @@ func createNotification(userID int, ticketID int) error {
 	return nil
 }
 
-
 func deleteTicketNotifications(ticketID int) error {
 
 	url := "http://it-helpdesk-notification-service:8003/api/notifications/ticket/" +
@@ -191,7 +188,6 @@ func deleteTicketNotifications(ticketID int) error {
 
 	return nil
 }
-
 
 func createTicket(c *gin.Context) {
 
@@ -260,7 +256,6 @@ func createTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, ticket)
 }
 
-
 func getTickets(c *gin.Context) {
 
 	mu.Lock()
@@ -316,7 +311,6 @@ func getTickets(c *gin.Context) {
 
 	c.JSON(http.StatusOK, tickets)
 }
-
 
 func getTicket(c *gin.Context) {
 
@@ -374,7 +368,6 @@ func getTicket(c *gin.Context) {
 
 	c.JSON(http.StatusOK, ticket)
 }
-
 
 func updateTicket(c *gin.Context) {
 
@@ -456,7 +449,6 @@ func updateTicket(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updated)
 }
-
 
 func deleteTicket(c *gin.Context) {
 

@@ -18,8 +18,15 @@ spec:
     spec:
       containers:
         - name: ticket-service
-          image: it-helpdesk-ticket-service:v5
+          image: it-helpdesk-ticket-service:v6
           imagePullPolicy: Never
+
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
 
           resources:
             requests:

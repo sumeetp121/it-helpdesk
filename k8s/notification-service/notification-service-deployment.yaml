@@ -21,6 +21,13 @@ spec:
           image: it-helpdesk-notification-service:v4
           imagePullPolicy: Never
 
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+
           resources:
             requests:
               cpu: "100m"
