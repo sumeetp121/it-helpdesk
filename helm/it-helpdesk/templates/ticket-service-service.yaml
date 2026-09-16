@@ -9,7 +9,7 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 8002
-      targetPort: 8002
+      port: {{ .Values.service.ticketService.port }}
+      targetPort: {{ .Values.service.ticketService.port }}
 
   type: ClusterIP

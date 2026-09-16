@@ -29,3 +29,37 @@ images:
   frontend:
     repository: it-helpdesk-frontend
     tag: v1
+
+service:
+  postgres:
+    port: 5432
+
+  userService:
+    port: 8001
+
+  ticketService:
+    port: 8002
+
+  notificationService:
+    port: 8003
+
+  frontend:
+    port: 80
+
+postgres:
+  database: helpdesk_db
+  username: helpdesk_app
+  password: helpdesk123
+  storage:
+    size: 5Gi
+    accessMode: ReadWriteOnce
+    storageClass: it-helpdesk-storage
+
+database:
+  host: it-helpdesk-postgres
+  port: 5432
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""

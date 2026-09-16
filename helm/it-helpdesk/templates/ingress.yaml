@@ -1,13 +1,14 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: it-helpdesk-ingress
   namespace: {{ .Values.namespace }}
 spec:
-  ingressClassName: nginx
-
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
         paths:
           - path: /
             pathType: Prefix
@@ -15,7 +16,7 @@ spec:
               service:
                 name: frontend
                 port:
-                  number: 80
+                  number: {{ .Values.service.frontend.port }}
 
           - path: /api/users
             pathType: Prefix
@@ -23,7 +24,7 @@ spec:
               service:
                 name: user-service
                 port:
-                  number: 8001
+                  number: {{ .Values.service.userService.port }}
 
           - path: /api/tickets
             pathType: Prefix
@@ -31,7 +32,7 @@ spec:
               service:
                 name: ticket-service
                 port:
-                  number: 8002
+                  number: {{ .Values.service.ticketService.port }}
 
           - path: /api/notifications
             pathType: Prefix
@@ -39,4 +40,5 @@ spec:
               service:
                 name: notification-service
                 port:
-                  number: 8003
+                  number: {{ .Values.service.notificationService.port }}
+{{- end }}

@@ -4,7 +4,7 @@ metadata:
   name: user-service-config
   namespace: {{ .Values.namespace }}
 data:
-  DB_HOST: "it-helpdesk-postgres"
-  DB_NAME: "helpdesk_db"
-  DB_USER: "helpdesk_app"
-  DB_PORT: "5432"
+  DB_HOST: "{{ .Values.database.host }}"
+  DB_NAME: "{{ .Values.postgres.database }}"
+  DB_USER: "{{ .Values.postgres.username }}"
+  DB_PORT: "{{ .Values.database.port }}"

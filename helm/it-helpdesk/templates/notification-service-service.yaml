@@ -9,7 +9,7 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 8003
-      targetPort: 8003
+      port: {{ .Values.service.notificationService.port }}
+      targetPort: {{ .Values.service.notificationService.port }}
 
   type: ClusterIP

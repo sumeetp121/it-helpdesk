@@ -8,8 +8,8 @@ spec:
     app: user-service
   ports:
     - protocol: TCP
-      port: 8001
-      targetPort: 8001
+      port: {{ .Values.service.userService.port }}
+      targetPort: {{ .Values.service.userService.port }}
   type: ClusterIP
 ---
 apiVersion: v1
@@ -22,6 +22,6 @@ spec:
     app: user-service
   ports:
     - protocol: TCP
-      port: 8001
-      targetPort: 8001
+      port: {{ .Values.service.userService.port }}
+      targetPort: {{ .Values.service.userService.port }}
   type: ClusterIP

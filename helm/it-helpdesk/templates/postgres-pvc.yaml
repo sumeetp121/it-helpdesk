@@ -4,9 +4,9 @@ metadata:
   name: postgres-pvc
   namespace: {{ .Values.namespace }}
 spec:
-  storageClassName: it-helpdesk-storage
+  accessModes:
+    - {{ .Values.postgres.storage.accessMode }}
+  storageClassName: {{ .Values.postgres.storage.storageClass }}
   resources:
     requests:
-      storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
+      storage: {{ .Values.postgres.storage.size }}
