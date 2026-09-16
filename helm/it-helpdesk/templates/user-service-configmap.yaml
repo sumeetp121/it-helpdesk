@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: {{ .Values.namespace }}
+data:
+  DB_HOST: "it-helpdesk-postgres"
+  DB_NAME: "helpdesk_db"
+  DB_USER: "helpdesk_app"
+  DB_PORT: "5432"
