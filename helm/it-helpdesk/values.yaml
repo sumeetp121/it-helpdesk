@@ -1,3 +1,31 @@
 # IT Helpdesk Helm Chart values
 
 namespace: it-helpdesk
+
+replicaCount:
+  postgres: 1
+  userService: 1
+  ticketService: 1
+  notificationService: 1
+  frontend: 1
+
+images:
+  postgres:
+    repository: it-helpdesk-postgres
+    tag: v1
+
+  userService:
+    repository: it-helpdesk-user-service
+    tag: v2
+
+  ticketService:
+    repository: it-helpdesk-ticket-service
+    tag: v6
+
+  notificationService:
+    repository: it-helpdesk-notification-service
+    tag: v4
+
+  frontend:
+    repository: it-helpdesk-frontend
+    tag: v1

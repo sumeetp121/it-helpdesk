@@ -4,7 +4,7 @@ metadata:
   name: user-service
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.userService }}
 
   selector:
     matchLabels:
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: it-helpdesk-user-service:v2
+          image: "{{ .Values.images.userService.repository }}:{{ .Values.images.userService.tag }}"
           imagePullPolicy: Never
 
           envFrom:

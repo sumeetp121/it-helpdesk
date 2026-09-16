@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.postgres }}
 
   selector:
     matchLabels:
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: it-helpdesk-postgres:v1
+          image: "{{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}"
           imagePullPolicy: Never
 
           resources:

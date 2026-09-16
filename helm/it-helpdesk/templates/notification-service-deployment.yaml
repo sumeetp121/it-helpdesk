@@ -4,7 +4,7 @@ metadata:
   name: notification-service
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.notificationService }}
 
   selector:
     matchLabels:
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: it-helpdesk-notification-service:v4
+          image: "{{ .Values.images.notificationService.repository }}:{{ .Values.images.notificationService.tag }}"
           imagePullPolicy: Never
 
           env:

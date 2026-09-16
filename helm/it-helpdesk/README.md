@@ -1,97 +1,199 @@
-# IT Helpdesk Helm Chart
+# Helm — IT Helpdesk
 
-This directory contains the Helm chart for deploying the complete IT Helpdesk microservices application on local Kubernetes.
+## Purpose
 
-## What is Helm?
+This Helm chart packages the complete **IT Helpdesk microservices application** so that the Kubernetes resources can be installed and managed as one Helm release.
 
-Helm is a package manager for Kubernetes.
+Helm allows us to manage Kubernetes manifests using configurable values instead of hardcoding the same settings in every YAML file.
 
-Instead of manually applying many Kubernetes YAML files with:
+---
 
-```bash
-kubectl apply -f ...
-```
-
-we can package the Kubernetes resources into one Helm chart and manage the application using commands such as:
-
-```bash
-helm install
-helm upgrade
-helm rollback
-helm uninstall
-```
-
-## Chart Structure
+## Chart Information
 
 ```text
-helm/it-helpdesk/
-├── Chart.yaml
-├── values.yaml
-├── .helmignore
-├── charts/
-└── templates/
-    ├── _helpers.tpl
-    ├── postgres-secret.yaml
-    ├── postgres-pvc.yaml
-    ├── postgres-deployment.yaml
-    ├── postgres-service.yaml
-    ├── user-service-configmap.yaml
-    ├── user-service-deployment.yaml
-    ├── user-service-service.yaml
-    ├── ticket-service-deployment.yaml
-    ├── ticket-service-service.yaml
-    ├── notification-service-deployment.yaml
-    ├── notification-service-service.yaml
-    ├── notification-service-alias.yaml
-    ├── frontend-deployment.yaml
-    ├── frontend-service.yaml
-    └── ingress.yaml
+Chart Name: it-helpdesk
+Chart Version: 0.1.0
+App Version: 1.0.0
+Namespace: it-helpdesk
 ```
 
-## Application Components
+---
 
-The Helm chart manages:
+## Helm Chart Structure
+
+```text
+helm/
+└── it-helpdesk/
+    ├── Chart.yaml
+    ├── values.yaml
+    ├── .helmignore
+    ├── charts/
+    └── templates/
+        ├── _helpers.tpl
+        ├── postgres-pvc.yaml
+        ├── postgres-deployment.yaml
+        ├── postgres-service.yaml
+        ├── postgres-secret.yaml
+        ├── user-service-configmap.yaml
+        ├── user-service-deployment.yaml
+        ├── user-service-service.yaml
+        ├── ticket-service-deployment.yaml
+        ├── ticket-service-service.yaml
+        ├── notification-service-deployment.yaml
+        ├── notification-service-service.yaml
+        ├── notification-service-alias.yaml
+        ├── frontend-deployment.yaml
+        ├── frontend-service.yaml
+        └── ingress.yaml
+```
+
+---
+
+# values.yaml
+
+The `values.yaml` file contains configurable values used by the Helm templates.
+
+Current configuration:
+
+```yaml
+namespace: it-helpdesk
+
+replicaCount:
+  postgres: 1
+  userService: 1
+  ticketService: 1
+  notificationService: 1
+  frontend: 1
+
+images:
+  postgres:
+    repository: it-helpdesk-postgres
+    tag: v1
+
+  userService:
+    repository: it-helpdesk-user-service
+    tag: v2
+
+  ticketService:
+    repository: it-helpdesk-ticket-service
+    tag: v6
+
+  notificationService:
+    repository: it-helpdesk-notification-service
+    tag: v4
+
+  frontend:
+    repository: it-helpdesk-frontend
+    tag: v1
+```
+
+---
+
+# Why use values.yaml?
+
+Without Helm values, we would hardcode values directly in Deployment templates.
+
+For example:
+
+```yaml
+replicas: 1
+```
+
+and:
+
+```yaml
+image: it-helpdesk-ticket-service:v6
+```
+
+With Helm, these values are configurable:
+
+```yaml
+replicas: {{ .Values.replicaCount.ticketService }}
+```
+
+and:
+
+```yaml
+image: "{{ .Values.images.ticketService.repository }}:{{ .Values.images.ticketService.tag }}"
+```
+
+This makes the chart easier to maintain and change.
+
+---
+
+# Replica Configuration
+
+Each Deployment gets its replica count from `values.yaml`.
+
+```yaml
+replicaCount:
+  postgres: 1
+  userService: 1
+  ticketService: 1
+  notificationService: 1
+  frontend: 1
+```
+
+For example, the frontend Deployment uses:
+
+```yaml
+spec:
+  replicas: {{ .Values.replicaCount.frontend }}
+```
+
+If we change:
+
+```yaml
+frontend: 2
+```
+
+Helm renders:
+
+```yaml
+replicas: 2
+```
+
+The Deployment template does not need to be changed.
+
+---
+
+# Image Configuration
+
+Container images and tags are also controlled from `values.yaml`.
+
+For example:
+
+```yaml
+ticketService:
+  repository: it-helpdesk-ticket-service
+  tag: v6
+```
+
+The Deployment template uses:
+
+```yaml
+image: "{{ .Values.images.ticketService.repository }}:{{ .Values.images.ticketService.tag }}"
+```
+
+Helm renders:
+
+```yaml
+image: "it-helpdesk-ticket-service:v6"
+```
+
+The same approach is used for:
 
 * PostgreSQL
 * User Service
 * Ticket Service
 * Notification Service
 * Frontend
-* Kubernetes Services
-* PostgreSQL Secret
-* User Service ConfigMap
-* PostgreSQL PVC
-* Ingress
 
-## Namespace
+---
 
-All application resources are deployed into:
+# Helm Validation
 
-```text
-it-helpdesk
-```
-
-The namespace is defined in:
-
-```yaml
-namespace: it-helpdesk
-```
-
-inside `values.yaml`.
-
-## Chart Information
-
-From `Chart.yaml`:
-
-```text
-Chart name: it-helpdesk
-Chart version: 0.1.0
-Application version: 1.0.0
-```
-
-## Validate the Helm Chart
-
-Before installing the chart, run:
+Check the chart:
 
 ```bash
 helm lint helm/it-helpdesk
@@ -109,169 +211,109 @@ The following message is informational:
 [INFO] Chart.yaml: icon is recommended
 ```
 
-It does not indicate a failure.
+It does not mean the lint failed.
 
-## Render the Templates
+---
 
-To see the Kubernetes YAML generated by Helm without installing anything:
+# Render Templates Without Installing
+
+Use:
 
 ```bash
 helm template it-helpdesk helm/it-helpdesk
 ```
 
-This is useful for checking the final Kubernetes manifests before deployment.
-
-## Check Existing Helm Releases
+To check container images:
 
 ```bash
-helm list -n it-helpdesk
+helm template it-helpdesk helm/it-helpdesk | grep "image:"
 ```
 
-## Install the Chart
+To check replica values:
 
-Install the Helm release:
+```bash
+helm template it-helpdesk helm/it-helpdesk | grep "replicas:"
+```
+
+Expected current result:
+
+```text
+replicas: 1
+replicas: 1
+replicas: 1
+replicas: 1
+replicas: 1
+```
+
+---
+
+# Helm Installation
+
+Install the chart:
 
 ```bash
 helm install it-helpdesk helm/it-helpdesk -n it-helpdesk
 ```
 
-The release name is:
-
-```text
-it-helpdesk
-```
-
-## Check Helm Release
+The Kubernetes namespace must already exist:
 
 ```bash
-helm status it-helpdesk -n it-helpdesk
+kubectl get namespace it-helpdesk
 ```
 
-Expected status:
+---
 
-```text
-STATUS: deployed
-```
-
-## Check Helm Release List
+# Check Helm Release
 
 ```bash
 helm list -n it-helpdesk
 ```
 
-Expected result:
+Check detailed release information:
 
-```text
-NAME          NAMESPACE     STATUS
-it-helpdesk   it-helpdesk   deployed
+```bash
+helm status it-helpdesk -n it-helpdesk
 ```
 
-## Verify Pods
+---
+
+# Check Kubernetes Resources
+
+Pods:
 
 ```bash
 kubectl get pods -n it-helpdesk
 ```
 
-All application Pods should show:
-
-```text
-1/1 Running
-```
-
-Current application Pods:
-
-```text
-frontend
-notification-service
-postgres
-ticket-service
-user-service
-```
-
-## Verify Services
+Services:
 
 ```bash
 kubectl get svc -n it-helpdesk
 ```
 
-Services include:
+Deployments:
 
-```text
-frontend
-user-service
-it-helpdesk-user-service
-ticket-service
-notification-service
-it-helpdesk-notification-service
-it-helpdesk-postgres
+```bash
+kubectl get deployments -n it-helpdesk
 ```
 
-## Verify Ingress
+Ingress:
 
 ```bash
 kubectl get ingress -n it-helpdesk
 ```
 
-The application is exposed through the NGINX Ingress.
-
-Current local Minikube address:
-
-```text
-192.168.49.2
-```
-
-Open:
-
-```text
-http://192.168.49.2
-```
-
-## Verify PostgreSQL Storage
+PVC:
 
 ```bash
 kubectl get pvc -n it-helpdesk
 ```
 
-The PostgreSQL PVC should show:
+---
 
-```text
-STATUS: Bound
-CAPACITY: 5Gi
-```
+# Helm Upgrade
 
-## Verify Helm Ownership
-
-Helm-managed resources can be checked with:
-
-```bash
-kubectl get all -n it-helpdesk \
-  -o custom-columns='KIND:.kind,NAME:.metadata.name,MANAGED-BY:.metadata.labels.app\.kubernetes\.io/managed-by'
-```
-
-The Deployments and Services should show:
-
-```text
-Helm
-```
-
-Other resources can be checked with:
-
-```bash
-kubectl get secret,configmap,pvc,ingress -n it-helpdesk \
-  -o custom-columns='KIND:.kind,NAME:.metadata.name,MANAGED-BY:.metadata.labels.app\.kubernetes\.io/managed-by'
-```
-
-The application Secret, ConfigMap, PVC and Ingress should show:
-
-```text
-Helm
-```
-
-Kubernetes-generated resources such as `kube-root-ca.crt`, Pods and ReplicaSets do not need to show the Helm label.
-
-## Helm Upgrade
-
-After changing Helm templates or values:
+After changing `values.yaml` or Helm templates:
 
 ```bash
 helm upgrade it-helpdesk helm/it-helpdesk -n it-helpdesk
@@ -284,7 +326,9 @@ helm status it-helpdesk -n it-helpdesk
 kubectl get pods -n it-helpdesk
 ```
 
-## Helm Rollback
+---
+
+# Helm Rollback
 
 Check release history:
 
@@ -298,88 +342,137 @@ Rollback to a previous revision:
 helm rollback it-helpdesk <REVISION> -n it-helpdesk
 ```
 
-Example:
+Then verify:
 
 ```bash
-helm rollback it-helpdesk 1 -n it-helpdesk
+helm status it-helpdesk -n it-helpdesk
 ```
 
-## Uninstall Helm Release
+---
 
-To remove the Helm-managed application:
+# Helm Uninstall
+
+To remove the Helm release:
 
 ```bash
 helm uninstall it-helpdesk -n it-helpdesk
 ```
 
-Use this command carefully because it removes resources managed by the Helm release.
+Check:
 
-## Important Local Development Note
+```bash
+helm list -n it-helpdesk
+```
 
-This project uses local Kubernetes/Minikube.
+---
 
-Container images use:
+# Local Minikube Images
+
+This project currently runs locally using Minikube.
+
+Images are built locally and configured so Kubernetes does not try to pull them from Docker Hub.
+
+The Deployments use:
 
 ```yaml
 imagePullPolicy: Never
 ```
 
-because the images are available locally in the Minikube environment.
+Therefore the required images must already be available inside the Minikube environment.
 
-Current application images include:
+Check images:
 
-```text
-it-helpdesk-postgres:v1
-it-helpdesk-user-service:v2
-it-helpdesk-ticket-service:v6
-it-helpdesk-notification-service:v4
-it-helpdesk-frontend:v1
+```bash
+minikube image ls
 ```
 
-## Helm vs kubectl
+---
+
+# Helm vs kubectl
 
 ### kubectl
 
-With plain Kubernetes manifests:
+With `kubectl`, we directly apply Kubernetes YAML files:
 
 ```bash
 kubectl apply -f k8s/
 ```
 
-we manage individual Kubernetes YAML files.
-
 ### Helm
 
-With Helm:
+With Helm, we package the Kubernetes configuration into a chart:
 
 ```bash
 helm install it-helpdesk helm/it-helpdesk -n it-helpdesk
 ```
 
-Helm manages the application as one release.
+Helm gives us:
 
-The Helm release stores information about:
+* One release to manage the application
+* Configurable values
+* Easier upgrades
+* Rollbacks
+* Versioned releases
+* Reusable templates
 
-* What resources belong to the release
-* Which chart version was used
-* Which revision is currently deployed
-* Previous revisions for upgrades and rollback
+---
 
-## Current Helm Milestone
+# Current Helm Values Improvement Milestone
 
-The IT Helpdesk application has been successfully migrated from manually managed Kubernetes resources to a Helm release.
+The Helm chart was improved to make the following settings configurable through `values.yaml`:
 
-Verified:
+### Image configuration
 
-* Helm chart created
-* `helm lint` passed
-* `helm template` passed
-* Helm release installed
-* Helm release status is `deployed`
-* All Pods are running
-* All Services are available
-* Ingress is available
-* PostgreSQL PVC is Bound
-* Secret is managed by Helm
-* ConfigMap is managed by Helm
-* Kubernetes application resources are managed by Helm
+```text
+PostgreSQL
+User Service
+Ticket Service
+Notification Service
+Frontend
+```
+
+### Replica configuration
+
+```text
+PostgreSQL
+User Service
+Ticket Service
+Notification Service
+Frontend
+```
+
+All five Deployments now use values from `values.yaml`.
+
+Validation completed with:
+
+```bash
+helm lint helm/it-helpdesk
+```
+
+and:
+
+```bash
+helm template it-helpdesk helm/it-helpdesk | grep "image:"
+```
+
+and:
+
+```bash
+helm template it-helpdesk helm/it-helpdesk | grep "replicas:"
+```
+
+The rendered output correctly produced the configured image tags and replica counts.
+
+---
+
+# Local Development Note
+
+The PostgreSQL credentials currently used by this local development project are:
+
+```text
+Database: helpdesk_db
+User: helpdesk_app
+Password: helpdesk123
+```
+
+These credentials are for local development only and should not be used as production credentials.

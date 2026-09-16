@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount.frontend }}
 
   selector:
     matchLabels:
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: it-helpdesk-frontend:v1
+          image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
           imagePullPolicy: Never
 
           resources:
