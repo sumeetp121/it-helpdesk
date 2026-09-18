@@ -6,23 +6,23 @@ GitHub Actions is used in this project for CI/CD automation.
 
 For this project, we are using:
 
-* GitHub Actions
-* GitHub repository
-* Kubernetes
-* Helm
-* Minikube
+- GitHub Actions
+- GitHub repository
+- Docker
+- GitHub Container Registry (GHCR)
+- Kubernetes
+- Helm
+- Minikube
 
 ---
 
-## Current CI Workflow
+## CI Workflow
 
-The current GitHub Actions workflow performs **Continuous Integration (CI)**.
-
-Workflow file:
+The workflow file is:
 
 ```text
 .github/workflows/ci.yml
-```
+````
 
 The workflow runs automatically when:
 
@@ -33,7 +33,7 @@ The workflow runs automatically when:
 
 ## CI Jobs
 
-The workflow contains three independent jobs.
+The workflow validates and builds the application components.
 
 ### 1. Python Services
 
@@ -51,11 +51,18 @@ It performs:
 4. Install Notification Service dependencies
 5. Check Python syntax
 
-Python syntax is checked using:
+Commands:
 
 ```bash
 python -m py_compile user-service/app.py
 python -m py_compile notification-service/app.py
+```
+
+This validates both Python services:
+
+```text
+user-service
+notification-service
 ```
 
 ---
@@ -75,7 +82,7 @@ It performs:
 3. Download Go dependencies
 4. Build the Ticket Service
 
-Commands used:
+Commands:
 
 ```bash
 cd ticket-service
@@ -96,11 +103,11 @@ Build Frontend
 It performs:
 
 1. Checkout the repository
-2. Set up Node.js 20
+2. Set up Node.js
 3. Install frontend dependencies
 4. Build the frontend
 
-Commands used:
+Commands:
 
 ```bash
 cd frontend
@@ -110,58 +117,245 @@ npm run build
 
 ---
 
-## Workflow Structure
+## Docker Image Build and Push
+
+The CI workflow also builds Docker images for the application components.
+
+Job name:
 
 ```text
-GitHub Push / Pull Request
-          |
-          v
-   GitHub Actions CI
-          |
-    +-----+-----+
-    |     |     |
-    v     v     v
- Python  Go   Frontend
-   |      |      |
-   v      v      v
-Syntax  Build   Build
- Check
+Build and Push Docker Images
 ```
 
-The three jobs run independently.
+The following images are built:
 
-If a job fails, GitHub Actions marks the workflow as failed.
+```text
+User Service
+Notification Service
+Ticket Service
+Frontend
+```
+
+Dockerfiles are located under:
+
+```text
+docker/
+├── user-service/Dockerfile
+├── notification-service/Dockerfile
+├── ticket-service/Dockerfile
+└── frontend/Dockerfile
+```
 
 ---
 
-## Why CI Is Useful
+## GitHub Container Registry
 
-Without CI, we would have to manually check the project after every code change.
+The Docker images are pushed to:
 
-GitHub Actions automatically checks the application after code is pushed.
+```text
+ghcr.io
+```
+
+GitHub Actions logs in using:
+
+```yaml
+permissions:
+  contents: read
+  packages: write
+```
+
+and:
+
+```yaml
+- name: Log in to GitHub Container Registry
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## Image Tagging
+
+Each Docker image is tagged using the Git commit SHA:
+
+```text
+${{ github.sha }}
+```
 
 For example:
 
 ```text
-Developer changes code
-        |
-        v
-Push to GitHub
-        |
-        v
-GitHub Actions starts
-        |
-        +--> Python validation
-        |
-        +--> Go build
-        |
-        +--> Frontend build
-        |
-        v
-      Result
+ghcr.io/sumeetp121/it-helpdesk-user-service:<commit-sha>
 ```
 
-This helps catch problems early.
+The same approach is used for:
+
+```text
+ghcr.io/sumeetp121/it-helpdesk-notification-service:<commit-sha>
+
+ghcr.io/sumeetp121/it-helpdesk-ticket-service:<commit-sha>
+
+ghcr.io/sumeetp121/it-helpdesk-frontend:<commit-sha>
+```
+
+### Why use the commit SHA?
+
+The image can be directly connected to the exact Git commit that produced it.
+
+For example:
+
+```text
+Git commit
+    |
+    v
+ac74688...
+    |
+    v
+Docker image
+    |
+    v
+user-service:ac74688...
+```
+
+This makes it possible to know exactly which source code version is running.
+
+---
+
+## Current CI Flow
+
+```text
+Developer
+    |
+    | git push
+    v
+GitHub
+    |
+    v
+GitHub Actions
+    |
+    +-------------------+
+    |                   |
+    v                   v
+Application CI       Docker CI
+    |                   |
+    +----+------+-------+
+         |      |
+         v      v
+      Python   Go
+         |      |
+         +---+--+
+             |
+             v
+          Frontend
+             |
+             v
+       Docker Images
+             |
+             v
+       GitHub Container
+          Registry
+             |
+             v
+            GHCR
+```
+
+---
+
+## CI vs CD
+
+A simple way to remember the difference:
+
+```text
+CI = Is my code/build ready?
+
+CD = Take that ready build and deploy it.
+```
+
+### CI
+
+Our current CI performs:
+
+```text
+Code
+  |
+  v
+Validate
+  |
+  v
+Build
+  |
+  v
+Build Docker Images
+  |
+  v
+Push Images to GHCR
+```
+
+### CD
+
+CD will take the Docker images from GHCR and deploy them to Kubernetes.
+
+The future flow will be:
+
+```text
+GHCR
+  |
+  v
+Kubernetes
+  |
+  v
+Helm
+  |
+  v
+Minikube / Kubernetes Cluster
+```
+
+Later, we will extend this toward:
+
+```text
+GitHub
+   |
+   v
+GitHub Actions
+   |
+   v
+GHCR
+   |
+   v
+GitOps
+   |
+   v
+Argo CD
+   |
+   v
+Kubernetes
+```
+
+---
+
+## Kubernetes Image Usage
+
+Kubernetes currently uses container images defined in deployment manifests.
+
+Example:
+
+```yaml
+containers:
+  - name: user-service
+    image: ghcr.io/sumeetp121/it-helpdesk-user-service:<commit-sha>
+```
+
+Kubernetes uses:
+
+```yaml
+imagePullSecrets:
+  - name: ghcr-secret
+```
+
+to authenticate with the private GitHub Container Registry.
 
 ---
 
@@ -171,21 +365,30 @@ This helps catch problems early.
 .github/
 └── workflows/
     └── ci.yml
+
+docker/
+├── user-service/
+│   └── Dockerfile
+├── notification-service/
+│   └── Dockerfile
+├── ticket-service/
+│   └── Dockerfile
+└── frontend/
+    └── Dockerfile
+
+k8s/
+├── user-service/
+├── notification-service/
+├── ticket-service/
+├── frontend/
+└── postgres/
 ```
-
-The workflow configuration is stored inside:
-
-```text
-.github/workflows/
-```
-
-GitHub automatically detects workflow YAML files in this directory.
 
 ---
 
 ## Local Validation
 
-Before committing the workflow, YAML syntax was validated locally using Ruby:
+Before committing the workflow, YAML syntax can be validated using:
 
 ```bash
 ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml"); puts "GitHub Actions YAML syntax: OK"'
@@ -200,60 +403,32 @@ GitHub Actions YAML syntax: OK
 Git whitespace validation:
 
 ```bash
-git diff --cached --check
+git diff --check
 ```
 
 No output means no whitespace errors were found.
 
 ---
 
-## Current Scope
-
-The current workflow is **CI only**.
-
-It currently:
-
-* Validates Python services
-* Builds the Go Ticket Service
-* Builds the React/Vite frontend
-
-It does **not yet**:
-
-* Build Docker images
-* Push Docker images to a registry
-* Deploy to Kubernetes
-* Perform Helm deployment
-* Perform GitOps deployment
-* Use Argo CD
-
-Those will be added in later milestones.
-
----
-
-## Git Workflow
-
-After completing a GitHub Actions milestone:
-
-```bash
-git status
-git add .
-git commit -m "message"
-git push origin main
-```
-
-Always verify the GitHub Actions workflow after pushing.
-
----
-
 ## Current Milestone
 
-### GitHub Actions CI
+### GitHub Actions CI + Docker Image Publishing
 
 Status:
 
 ```text
 CI workflow created
-YAML syntax validated
-Workflow committed
+Python services validated
+Go service built
+Frontend built
+Docker images built
+Docker images pushed to GHCR
+Kubernetes tested with GHCR image
 ```
 
+The next stage is **CD**.
+
+CD will be responsible for taking the image produced by CI and deploying/updating the application in Kubernetes.
+
+```
+```
