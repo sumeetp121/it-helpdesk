@@ -80,3 +80,35 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
+
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Build User Service image
+        run: |
+          docker build \
+            -f docker/user-service/Dockerfile \
+            -t it-helpdesk-user-service:ci .
+
+      - name: Build Notification Service image
+        run: |
+          docker build \
+            -f docker/notification-service/Dockerfile \
+            -t it-helpdesk-notification-service:ci .
+
+      - name: Build Ticket Service image
+        run: |
+          docker build \
+            -f docker/ticket-service/Dockerfile \
+            -t it-helpdesk-ticket-service:ci .
+
+      - name: Build Frontend image
+        run: |
+          docker build \
+            -f docker/frontend/Dockerfile \
+            -t it-helpdesk-frontend:ci .
