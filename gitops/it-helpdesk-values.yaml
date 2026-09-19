@@ -1,0 +1,15 @@
+# GitOps desired state for IT Helpdesk
+# Image tags are updated by GitHub Actions after successful image builds.
+
+images:
+  userService:
+    tag: "717957c939d65b9bc8eddac3df7c149f8b26ebab"
+
+  ticketService:
+    tag: "717957c939d65b9bc8eddac3df7c149f8b26ebab"
+
+  notificationService:
+    tag: "717957c939d65b9bc8eddac3df7c149f8b26ebab"
+
+  frontend:
+    tag: "717957c939d65b9bc8eddac3df7c149f8b26ebab"
