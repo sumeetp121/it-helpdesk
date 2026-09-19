@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -143,3 +143,50 @@ jobs:
         run: |
           docker push \
             ghcr.io/sumeetp121/it-helpdesk-frontend:${{ github.sha }}
+
+      - name: Update GitOps image tags
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("gitops/it-helpdesk-values.yaml")
+          text = path.read_text()
+
+          sha = "${{ github.sha }}"
+
+          services = [
+              "userService",
+              "ticketService",
+              "notificationService",
+              "frontend",
+          ]
+
+          lines = text.splitlines()
+
+          for service in services:
+              for i, line in enumerate(lines):
+                  if line == f"  {service}:" and i + 1 < len(lines):
+                      lines[i + 1] = f'    tag: "{sha}"'
+                      break
+
+          path.write_text("\n".join(lines) + "\n")
+          PY
+
+      - name: Show updated GitOps values
+        run: |
+          echo "Updated GitOps image tags:"
+          cat gitops/it-helpdesk-values.yaml
+
+      - name: Commit and push GitOps changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add gitops/it-helpdesk-values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No GitOps changes to commit."
+          else
+            git commit -m "Update GitOps image tags to ${{ github.sha }}"
+            git push
+          fi
