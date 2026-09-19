@@ -7,7 +7,7 @@ replicaCount:
   userService: 1
   ticketService: 1
   notificationService: 1
-  frontend: 2
+  frontend: 1
 
 images:
   postgres:
