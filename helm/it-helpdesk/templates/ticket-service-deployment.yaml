@@ -16,11 +16,12 @@ spec:
         app: ticket-service
 
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: ticket-service
           image: "{{ .Values.images.ticketService.repository }}:{{ .Values.images.ticketService.tag }}"
-          imagePullPolicy: Never
-
+          imagePullPolicy: Always
           env:
             - name: DB_PASSWORD
               valueFrom:

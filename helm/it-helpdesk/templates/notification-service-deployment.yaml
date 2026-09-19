@@ -16,10 +16,12 @@ spec:
         app: notification-service
 
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: notification-service
           image: "{{ .Values.images.notificationService.repository }}:{{ .Values.images.notificationService.tag }}"
-          imagePullPolicy: Never
+          imagePullPolicy: Always
 
           env:
             - name: DB_PASSWORD

@@ -16,10 +16,12 @@ spec:
         app: frontend
 
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: frontend
           image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
-          imagePullPolicy: Never
+          imagePullPolicy: Always
 
           resources:
             requests:

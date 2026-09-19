@@ -16,10 +16,12 @@ spec:
         app: user-service
 
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: user-service
           image: "{{ .Values.images.userService.repository }}:{{ .Values.images.userService.tag }}"
-          imagePullPolicy: Never
+          imagePullPolicy: Always
 
           envFrom:
             - configMapRef:

@@ -15,20 +15,20 @@ images:
     tag: v1
 
   userService:
-    repository: it-helpdesk-user-service
-    tag: v2
+    repository: ghcr.io/sumeetp121/it-helpdesk-user-service
+    tag: ""
 
   ticketService:
-    repository: it-helpdesk-ticket-service
-    tag: v6
+    repository: ghcr.io/sumeetp121/it-helpdesk-ticket-service
+    tag: ""
 
   notificationService:
-    repository: it-helpdesk-notification-service
-    tag: v4
+    repository: ghcr.io/sumeetp121/it-helpdesk-notification-service
+    tag: ""
 
   frontend:
-    repository: it-helpdesk-frontend
-    tag: v1
+    repository: ghcr.io/sumeetp121/it-helpdesk-frontend
+    tag: ""
 
 service:
   postgres:
