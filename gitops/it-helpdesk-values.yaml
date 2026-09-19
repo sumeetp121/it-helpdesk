@@ -3,13 +3,13 @@
 
 images:
   userService:
-    tag: "94bb38fac21b3c897d4efd03a6ba5fa7bd78e0ef"
+    tag: "a28615c6dc070174d86963a9273c49b18680494a"
 
   ticketService:
-    tag: "94bb38fac21b3c897d4efd03a6ba5fa7bd78e0ef"
+    tag: "a28615c6dc070174d86963a9273c49b18680494a"
 
   notificationService:
-    tag: "94bb38fac21b3c897d4efd03a6ba5fa7bd78e0ef"
+    tag: "a28615c6dc070174d86963a9273c49b18680494a"
 
   frontend:
-    tag: "94bb38fac21b3c897d4efd03a6ba5fa7bd78e0ef"
+    tag: "a28615c6dc070174d86963a9273c49b18680494a"
